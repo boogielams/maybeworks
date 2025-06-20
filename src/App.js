@@ -149,7 +149,7 @@ const mockNetworks = [
     change30d: 8.4,
     speed: 92,
     cost: 88,
-    reliability: 75,
+    reliability: 92,
     devExp: 95,
     liquidity: 98,
     security: 85,
@@ -157,9 +157,9 @@ const mockNetworks = [
     payments: 92,
     marketCap: '$89.2B',
     volume24h: '$2.1B',
-    tps: 3000,
+    tps: 65000,
     finality: '0.8s',
-    gasPrice: '$0.002',
+    gasPrice: '$0.00025',
     uptime: 98.1,
     ecosystem: 'Mature',
     founded: 2020,
@@ -604,8 +604,10 @@ const SIRDashboard = () => {
     duration: 24, // hours
     intensity: 'medium',
     network1: 'sei',
+    network2: 'base',
     transactions: 10000,
-    complexity: 'medium'
+    complexity: 'medium',
+    simulationMode: 'duration' // 'duration' or 'completion'
   });
   
   const [simulationResults, setSimulationResults] = useState(null);
@@ -895,62 +897,53 @@ const SIRDashboard = () => {
   };
 
   const simulateNetwork = (network) => {
-    // Base success rate based on network reliability
-    const baseSuccessRate = network.reliability / 100;
-    
-    // Adjust for workload intensity
-    const intensityMultipliers = {
-      low: 1.1,
-      medium: 1.0,
-      high: 0.9,
-      extreme: 0.7
-    };
-    
-    // Get complexity multiplier
+    const intensity = intensityMultipliers[simulatorConfig.intensity];
     const complexity = complexityMultipliers[simulatorConfig.complexity];
-    
-    // Calculate effective success rate
-    const effectiveSuccessRate = Math.min(
-      1,
-      baseSuccessRate * intensityMultipliers[simulatorConfig.intensity] / complexity.failureRate
-    );
-    
-    // Calculate effective TPS based on network capacity and workload
-    const effectiveTPS = Math.min(
-      network.tps,
-      simulatorConfig.transactions / (simulatorConfig.duration * 3600)
-    );
-    
-    // Calculate total cost
+
+    // Base success rate adjusted by workload
+    const baseSuccessRate = network.reliability / 100;
+    const effectiveSuccessRate = Math.min(1, baseSuccessRate * (1 / intensity.failureRate) * (1 / complexity.failureRate));
+
+    const successfulTransactions = Math.round(simulatorConfig.transactions * effectiveSuccessRate);
+    const failedTransactions = simulatorConfig.transactions - successfulTransactions;
+
+    // Effective TPS is a portion of the network's max TPS, adjusted for intensity
+    const effectiveTPS = Math.round(network.tps * (1 - (1 - effectiveSuccessRate) * 0.5) * Math.min(1, intensity.tps * 0.5));
+
     const gasPrice = parseFloat(network.gasPrice.replace('$', ''));
-    const totalCost = (
-      simulatorConfig.transactions * 
-      gasPrice * 
-      complexity.gasMultiplier
-    ).toFixed(2);
+    const totalCost = (successfulTransactions * gasPrice * complexity.gasMultiplier * intensity.cost).toFixed(2);
     
-    // Performance score calculation
     const performanceScore = Math.round(
       (effectiveSuccessRate * 40) +
-      (effectiveTPS / network.tps * 30) +
-      ((1 - (gasPrice / 0.1)) * 30)
+      (Math.min(1, effectiveTPS / network.tps) * 30) +
+      (Math.max(0, 1 - (gasPrice / 0.1)) * 30)
     );
     
-    return {
-      network,
-      metrics: {
-        successRate: (effectiveSuccessRate * 100).toFixed(1),
-        effectiveTPS: Math.round(effectiveTPS),
-        totalCost,
-        performanceScore
-      }
+    let metrics = {
+      successRate: (effectiveSuccessRate * 100).toFixed(1),
+      effectiveTPS: effectiveTPS,
+      totalCost,
+      performanceScore,
+      successfulTransactions,
+      failedTransactions,
     };
+
+    if (simulatorConfig.simulationMode === 'duration') {
+      metrics.costPerHour = (totalCost / simulatorConfig.duration).toFixed(2);
+      metrics.avgProcessingTime = (parseFloat(network.finality.replace('s', '')) * complexity.processingTime).toFixed(3);
+    } else { // completion mode
+      metrics.completionTime = successfulTransactions > 0 && effectiveTPS > 0 ? successfulTransactions / effectiveTPS : 0;
+    }
+    
+    return { network, metrics };
   };
 
   const runSimulation = async () => {
     setIsSimulating(true);
+    setSimulationResults(null);
     
     const network1 = rankedNetworks.find(n => n.id === simulatorConfig.network1);
+    const network2 = rankedNetworks.find(n => n.id === simulatorConfig.network2);
     
     // Workload characteristics
     const workload = {
@@ -961,10 +954,13 @@ const SIRDashboard = () => {
       complexity: simulatorConfig.complexity
     };
     
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     const results = {
       workload: workload,
       config: simulatorConfig,
-      network1: simulateNetwork(network1)
+      network1: simulateNetwork(network1),
+      network2: simulateNetwork(network2)
     };
     
     setSimulationResults(results);
@@ -1669,44 +1665,131 @@ const SIRDashboard = () => {
     });
   };
 
-  // Add mock betting data
+  // Update the mock betting markets to be asset-specific
   const mockBettingMarkets = {
     ethereum: {
       marketId: 'eth-ai-score-q4',
       chainId: 'ethereum',
-      question: 'Will Ethereum\'s AI score exceed 85 by Q4 2025?',
+      question: 'Will Ethereum\'s AI score exceed 65 by Q4 2025?',
       outcomes: [
-        { name: 'Yes', odds: 1.95, volume: 156000 },
-        { name: 'No', odds: 2.15, volume: 142000 }
+        { name: 'Yes', odds: 1.85, volume: 156000 },
+        { name: 'No', odds: 2.25, volume: 142000 }
       ],
       totalVolume: 298000,
       expiryDate: new Date('2025-12-31'),
-      status: 'active',
-      priceHistory: Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
-        price: 1.8 + Math.random() * 0.5
-      }))
+      status: 'active'
     },
     solana: {
       marketId: 'sol-ai-score-q4',
       chainId: 'solana',
-      question: 'Will Solana\'s AI score exceed 90 by Q4 2025?',
+      question: 'Will Solana\'s AI score exceed 95 by Q4 2025?',
       outcomes: [
-        { name: 'Yes', odds: 2.05, volume: 134000 },
-        { name: 'No', odds: 1.85, volume: 128000 }
+        { name: 'Yes', odds: 2.15, volume: 134000 },
+        { name: 'No', odds: 1.75, volume: 128000 }
       ],
       totalVolume: 262000,
       expiryDate: new Date('2025-12-31'),
-      status: 'active',
-      priceHistory: Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
-        price: 1.9 + Math.random() * 0.4
-      }))
+      status: 'active'
     },
-    // Add similar objects for other chains...
+    base: {
+      marketId: 'base-ai-score-q4',
+      chainId: 'base',
+      question: 'Will Base\'s AI score exceed 90 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 1.95, volume: 98000 },
+        { name: 'No', odds: 2.05, volume: 92000 }
+      ],
+      totalVolume: 190000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    sei: {
+      marketId: 'sei-ai-score-q4',
+      chainId: 'sei',
+      question: 'Will Sei\'s AI score exceed 90 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 1.75, volume: 112000 },
+        { name: 'No', odds: 2.35, volume: 108000 }
+      ],
+      totalVolume: 220000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    sui: {
+      marketId: 'sui-ai-score-q4',
+      chainId: 'sui',
+      question: 'Will Sui\'s AI score exceed 88 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 1.90, volume: 89000 },
+        { name: 'No', odds: 2.10, volume: 86000 }
+      ],
+      totalVolume: 175000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    arbitrum: {
+      marketId: 'arb-ai-score-q4',
+      chainId: 'arbitrum',
+      question: 'Will Arbitrum\'s AI score exceed 78 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 2.05, volume: 76000 },
+        { name: 'No', odds: 1.85, volume: 72000 }
+      ],
+      totalVolume: 148000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    optimism: {
+      marketId: 'opt-ai-score-q4',
+      chainId: 'optimism',
+      question: 'Will Optimism\'s AI score exceed 78 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 2.10, volume: 68000 },
+        { name: 'No', odds: 1.80, volume: 65000 }
+      ],
+      totalVolume: 133000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    polygon: {
+      marketId: 'pol-ai-score-q4',
+      chainId: 'polygon',
+      question: 'Will Polygon\'s AI score exceed 75 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 2.20, volume: 82000 },
+        { name: 'No', odds: 1.70, volume: 78000 }
+      ],
+      totalVolume: 160000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    avalanche: {
+      marketId: 'avax-ai-score-q4',
+      chainId: 'avalanche',
+      question: 'Will Avalanche\'s AI score exceed 72 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 2.25, volume: 54000 },
+        { name: 'No', odds: 1.65, volume: 52000 }
+      ],
+      totalVolume: 106000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    },
+    bsc: {
+      marketId: 'bsc-ai-score-q4',
+      chainId: 'bsc',
+      question: 'Will BNB Chain\'s AI score exceed 68 by Q4 2025?',
+      outcomes: [
+        { name: 'Yes', odds: 2.30, volume: 95000 },
+        { name: 'No', odds: 1.60, volume: 92000 }
+      ],
+      totalVolume: 187000,
+      expiryDate: new Date('2025-12-31'),
+      status: 'active'
+    }
   };
 
-  // Add BettingInterface component
+  // Update the BettingInterface component with cleaner design
   const BettingInterface = ({ network, prediction }) => {
     const [betAmount, setBetAmount] = useState('');
     const [selectedOutcome, setSelectedOutcome] = useState(null);
@@ -1717,8 +1800,13 @@ const SIRDashboard = () => {
       return (parseFloat(betAmount) * selectedOutcome.odds).toFixed(2);
     };
 
+    const calculateProfit = () => {
+      if (!betAmount || !selectedOutcome) return 0;
+      return (parseFloat(betAmount) * selectedOutcome.odds - parseFloat(betAmount)).toFixed(2);
+    };
+
     return (
-      <div className="bg-white rounded-lg border p-4 mt-4">
+      <div className="bg-gray-50 rounded-xl border p-6 mt-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Prediction Market</h3>
           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -1727,146 +1815,248 @@ const SIRDashboard = () => {
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="text-sm font-medium text-gray-700 mb-2">{market.question}</div>
-          <div className="grid grid-cols-2 gap-3">
-            {market.outcomes.map((outcome) => (
-              <button
-                key={outcome.name}
-                onClick={() => setSelectedOutcome(outcome)}
-                className={`p-3 rounded-lg border transition-colors ${
-                  selectedOutcome?.name === outcome.name
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium">{outcome.name}</span>
-                  <span className="text-sm text-gray-500">{outcome.odds}x</span>
-                </div>
-                <div className="text-xs text-gray-500">
-                  Volume: ${(outcome.volume / 1000).toFixed(1)}k
-                </div>
-              </button>
-            ))}
-          </div>
+        <div className="bg-white rounded-lg p-4 mb-4 border">
+          <p className="font-semibold text-center text-gray-800">{market.question}</p>
         </div>
 
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {market.outcomes.map((outcome) => (
+            <button
+              key={outcome.name}
+              onClick={() => setSelectedOutcome(outcome)}
+              className={`p-4 rounded-xl text-center transition-all duration-200 ${
+                selectedOutcome?.name === outcome.name
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : 'bg-white border hover:bg-gray-100'
+              }`}
+            >
+              <div className="font-bold text-xl">{outcome.name}</div>
+              <div className="text-lg">{outcome.odds.toFixed(2)}x</div>
+            </button>
+          ))}
+        </div>
+        
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bet Amount
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                value={betAmount}
-                onChange={(e) => setBetAmount(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter amount"
-              />
-              <div className="absolute right-3 top-2 text-gray-400">USDC</div>
-            </div>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+            <input
+              type="number"
+              value={betAmount}
+              onChange={(e) => setBetAmount(e.target.value)}
+              className="w-full pl-7 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              placeholder="Enter bet amount"
+            />
           </div>
 
-          <div className="flex gap-2">
-            {[10, 50, 100].map((amount) => (
-              <button
-                key={amount}
-                onClick={() => setBetAmount(amount.toString())}
-                className="px-3 py-1 text-sm border rounded-full hover:bg-gray-50"
-              >
-                ${amount}
-              </button>
-            ))}
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-gray-600">Potential Payout</span>
-              <span className="font-medium">${calculatePotentialPayout()}</span>
+          {selectedOutcome && betAmount > 0 && (
+            <div className="bg-white rounded-lg p-4 border grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-sm text-gray-500">Potential Payout</div>
+                <div className="text-xl font-bold text-green-600">${calculatePotentialPayout()}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-sm text-gray-500">Profit</div>
+                <div className="text-xl font-bold text-green-600">${calculateProfit()}</div>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Current Odds</span>
-              <span className="font-medium">
-                {selectedOutcome ? `${selectedOutcome.odds}x` : '-'}
-              </span>
-            </div>
-          </div>
+          )}
 
           <button
-            disabled={!selectedOutcome || !betAmount}
-            className={`w-full py-2 px-4 rounded-lg font-medium ${
-              selectedOutcome && betAmount
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            }`}
+            disabled={!selectedOutcome || !betAmount || betAmount <= 0}
+            className="w-full py-3 px-4 rounded-lg font-semibold text-lg text-white transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Place Bet
           </button>
         </div>
-
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-900">Price History</h4>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                <span>{Math.floor(market.totalVolume / 1000)} traders</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <BarChart2 className="w-4 h-4" />
-                <span>${(market.totalVolume / 1000).toFixed(0)}k volume</span>
-              </div>
-            </div>
-          </div>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={market.priceHistory}>
-                <defs>
-                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis 
-                  dataKey="date" 
-                  tick={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  domain={['dataMin - 0.1', 'dataMax + 0.1']}
-                  tick={false}
-                  axisLine={false}
-                />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white border rounded-lg shadow-lg p-2 text-sm">
-                          <div className="font-medium">{payload[0].value.toFixed(3)}x</div>
-                          <div className="text-gray-500">
-                            {new Date(payload[0].payload.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="price" 
-                  stroke="#3B82F6" 
-                  fillOpacity={1}
-                  fill="url(#colorPrice)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
       </div>
     );
+  };
+
+  const formatSeconds = (seconds) => {
+    if (isNaN(seconds) || seconds <= 0) return 'N/A';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    
+    const hDisplay = h > 0 ? h + "h " : "";
+    const mDisplay = m > 0 ? m + "m " : "";
+    const sDisplay = s >= 0 ? s + "s" : "";
+    
+    const result = hDisplay + mDisplay + sDisplay;
+    return result.trim() === '' ? '0s' : result.trim();
+  }
+
+  const growthAnalysisData = {
+    solana: {
+      aiIntegration: [
+        "Core AI Capabilities: High throughput (65k TPS) is ideal for running large-scale AI inference models on-chain.",
+        "Developer Ecosystem: Growing support for AI/ML frameworks makes it attractive for developers.",
+        "Scalability for AI: Sub-second finality ensures AI agents can react and transact in near real-time."
+      ],
+      growthDrivers: [
+        "Market Demand: Solana's low transaction costs attract high-volume applications, a key requirement for many AI use cases.",
+        "Competitive Advantages: Proven ability to handle high traffic demonstrates robustness for future AI dApps.",
+        "Tokenomics & Utility: Staking SOL secures the network, and its use as gas for AI-driven transactions directly ties utility to adoption."
+      ],
+      riskAssessment: [
+        "Technical Risks: Historically, network stability has been a concern; any downtime could be catastrophic for real-time AI services.",
+        "Market Risks: Faces intense competition from both new L1s (Sei, Sui) and Ethereum L2s targeting the performance market.",
+        "Execution Risks: Must continue to foster a developer environment that is as welcoming as Ethereum's to attract top AI talent."
+      ]
+    },
+    sei: {
+      aiIntegration: [
+        "Core AI Capabilities: The first parallelized EVM is purpose-built for concurrent transaction processing, a core need for many AI algorithms.",
+        "Developer Ecosystem: Actively courting AI projects with a dedicated $10M fund and specialized technical support.",
+        "Scalability for AI: Twin-turbo consensus provides massive parallel processing, allowing multiple AI agents to operate without bottlenecks."
+      ],
+      growthDrivers: [
+        "Market Demand: Positioned to capture the wave of on-chain AI and DePIN applications that are too resource-intensive for other chains.",
+        "Competitive Advantages: A first-mover in parallelized EVMs creates a strong technical moat for high-frequency AI tasks.",
+        "Tokenomics & Utility: Transaction fees from anticipated high-volume AI usage could create a powerful value accrual mechanism for the token."
+      ],
+      riskAssessment: [
+        "Technical Risks: The novel parallelized EVM is less battle-tested and potential bugs could be more subtle and complex.",
+        "Market Risks: Heavily reliant on the 'AI narrative'; a cooling of interest in on-chain AI could significantly impact its growth.",
+        "Execution Risks: Must build a robust ecosystem from a relatively new starting point to compete with established players."
+      ]
+    },
+    sui: {
+      aiIntegration: [
+        "Core AI Capabilities: Object-centric model allows for fine-grained parallel execution of complex AI computations.",
+        "Developer Ecosystem: The Move language offers enhanced security features, crucial for developing safe AI smart contracts.",
+        "Scalability for AI: Horizontally scalable, meaning throughput can increase with more nodes to meet AI demands."
+      ],
+      growthDrivers: [
+        "Market Demand: Well-suited for dynamic on-chain assets and complex state management required in AI-driven gaming or simulations.",
+        "Competitive Advantages: Unique data model provides a different approach to scalability that may unlock novel AI applications.",
+        "Tokenomics & Utility: Gas fees and storage fund mechanism create sustainable economics for data-heavy AI dApps."
+      ],
+      riskAssessment: [
+        "Technical Risks: Developer adoption of the Move language has been slower than for EVM-compatible chains.",
+        "Market Risks: Needs to carve out a distinct niche against other high-performance L1s to attract users and liquidity.",
+        "Valuation Risks: Current valuation assumes significant adoption of its unique architecture, which is not yet guaranteed."
+      ]
+    },
+    base: {
+      aiIntegration: [
+        "Core AI Capabilities: Leverages Ethereum's security while providing a low-cost environment for AI transaction execution.",
+        "Developer Ecosystem: Backed by Coinbase, providing a massive user base and on-ramp for mainstream AI applications.",
+        "Scalability for AI: As an L2, it offers significantly higher throughput and lower costs than Ethereum L1 for AI operations."
+      ],
+      growthDrivers: [
+        "Market Demand: Positioned as a key on-ramp for retail users to interact with AI-powered dApps.",
+        "Competitive Advantages: Deep integration with Coinbase's products and services provides an unparalleled distribution channel.",
+        "Tokenomics & Utility: While it doesn't have its own token, its success drives value for ETH and the broader Ethereum ecosystem."
+      ],
+      riskAssessment: [
+        "Technical Risks: Dependent on a centralized sequencer, which introduces a single point of failure and censorship risk.",
+        "Market Risks: The L2 space is hyper-competitive, with many well-funded teams competing for market share.",
+        "Execution Risks: Must navigate the path to decentralization successfully to align with the crypto ethos long-term."
+      ]
+    },
+    ethereum: {
+      aiIntegration: [
+        "Core AI Capabilities: The most decentralized and secure platform for high-value AI applications and smart contracts.",
+        "Developer Ecosystem: Unmatched developer community and battle-tested infrastructure provide a solid base for complex AI logic.",
+        "Scalability for AI: L2 rollups (like Arbitrum, Base) are the primary strategy for scaling AI applications, keeping activity within the Ethereum ecosystem."
+      ],
+      growthDrivers: [
+        "Market Demand: The established standard for DeFi and NFTs; AI applications requiring ultimate security will build here.",
+        "Competitive Advantages: The network's 'money' status (ETH) and massive liquidity are a powerful moat.",
+        "Tokenomics & Utility: ETH's ultrasound money narrative, driven by fee burns (EIP-1559), creates a strong value proposition."
+      ],
+      riskAssessment: [
+        "Technical Risks: The L1 itself is not scalable for high-frequency AI tasks, forcing reliance on a fragmented L2 landscape.",
+        "Market Risks: High gas fees on L1 price out many types of AI applications, pushing innovation to other chains.",
+        "Valuation Risks: Its large market cap means growth is slower, and it's less likely to see the explosive gains of smaller-cap tokens."
+      ]
+    },
+    arbitrum: {
+      aiIntegration: [
+        "Core AI Capabilities: Offers a low-cost, high-throughput environment on top of Ethereum's security for AI dApps.",
+        "Developer Ecosystem: Strong EVM compatibility makes it easy for developers to migrate existing smart contracts and tools.",
+        "Scalability for AI: Benefits from ongoing Ethereum upgrades and its own Nitro tech stack to improve performance for AI."
+      ],
+      growthDrivers: [
+        "Market Demand: Leading L2 for DeFi, positioning it well to support AI-driven financial applications.",
+        "Competitive Advantages: Has a strong brand and significant first-mover advantage among Ethereum L2s.",
+        "Tokenomics & Utility: The ARB token allows for governance over the network's future, including AI-related initiatives."
+      ],
+      riskAssessment: [
+        "Technical Risks: Like other L2s, it relies on a centralized sequencer, posing potential uptime and censorship risks.",
+        "Market Risks: Faces fierce competition from other L2s and alternative L1s for developer and user attention.",
+        "Execution Risks: The transition to a fully decentralized network with permissionless validation is a complex multi-year process."
+      ]
+    },
+    optimism: {
+      aiIntegration: [
+        "Core AI Capabilities: The OP Stack provides a modular framework for building custom chains (Superchain), which could host specialized AI environments.",
+        "Developer Ecosystem: Strong focus on public goods funding and a positive-sum ethos attracts mission-driven developers.",
+        "Scalability for AI: The Superchain vision aims for horizontal scalability, allowing AI applications to operate across an interoperable network of chains."
+      ],
+      growthDrivers: [
+        "Market Demand: The narrative of a cohesive 'Superchain' is a compelling vision for a future of interoperable AI agents.",
+        "Competitive Advantages: The OP Stack has become a popular choice for new L2s (e.g., Base), creating a powerful network effect.",
+        "Tokenomics & Utility: Governance over the OP Stack and public goods funding gives the token significant influence."
+      ],
+      riskAssessment: [
+        "Technical Risks: The Superchain vision is highly ambitious and faces significant technical hurdles to achieve seamless interoperability.",
+        "Market Risks: Must compete with the monolithic chain thesis and other L2 ecosystems like Arbitrum and Polygon.",
+        "Execution Risks: Relies on a broad coalition of teams to build out the Superchain, which requires strong coordination."
+      ]
+    },
+    polygon: {
+      aiIntegration: [
+        "Core AI Capabilities: Offers a suite of scaling solutions (PoS, zkEVM, Miden) that can be tailored to different AI application needs.",
+        "Developer Ecosystem: Strong enterprise and business development focus has led to major partnerships (e.g., Starbucks, Disney).",
+        "Scalability for AI: The upcoming Polygon 2.0 aims to unify its various chains into an interoperable 'value layer' for the internet."
+      ],
+      growthDrivers: [
+        "Market Demand: A trusted brand for enterprises looking to experiment with blockchain and AI technology.",
+        "Competitive Advantages: Multi-pronged scaling strategy allows it to be flexible and adapt to different market needs.",
+        "Tokenomics & Utility: The POL token upgrade is designed to allow staking across all Polygon chains, unifying the ecosystem."
+      ],
+      riskAssessment: [
+        "Technical Risks: Managing a diverse suite of scaling solutions creates complexity and can fragment liquidity and developers.",
+        "Market Risks: The Polygon brand can be confusing due to the variety of chains and technologies under its umbrella.",
+        "Execution Risks: The Polygon 2.0 vision is a massive undertaking that requires flawless execution to succeed."
+      ]
+    },
+    avalanche: {
+      aiIntegration: [
+        "Core AI Capabilities: Subnets allow applications to create custom, dedicated chains optimized for specific AI workloads.",
+        "Developer Ecosystem: Strong in the gaming and enterprise sectors, which are prime areas for AI integration.",
+        "Scalability for AI: The subnet architecture provides a path to near-infinite scalability by isolating traffic."
+      ],
+      growthDrivers: [
+        "Market Demand: Ideal for applications that need high performance and customizability without competing for blockspace.",
+        "Competitive Advantages: Subnets offer a unique value proposition for projects wanting full control over their environment.",
+        "Tokenomics & Utility: AVAX is staked to secure the main network and is often used as the gas token for subnets."
+      ],
+      riskAssessment: [
+        "Technical Risks: Subnets can be complex to set up and maintain, and security is the responsibility of the subnet deployer.",
+        "Market Risks: The model of paying for subnet validation can be expensive, potentially limiting adoption to well-funded projects.",
+        "Execution Risks: Must prove that the subnet model can create a more vibrant ecosystem than a single, shared L1."
+      ]
+    },
+    bsc: {
+      aiIntegration: [
+        "Core AI Capabilities: High throughput and low fees make it a viable, low-cost environment for experimenting with AI dApps.",
+        "Developer Ecosystem: EVM compatibility and a large user base provide a ready market for new applications.",
+        "Scalability for AI: Has demonstrated the ability to handle very high transaction volumes, though with centralization trade-offs."
+      ],
+      growthDrivers: [
+        "Market Demand: Very popular in emerging markets due to its low fees, which could be a key demographic for accessible AI tools.",
+        "Competitive Advantages: Deep liquidity and a massive, active user base give it a strong network effect.",
+        "Tokenomics & Utility: BNB has deep utility within the broader Binance ecosystem, from trading fees to launchpad access."
+      ],
+      riskAssessment: [
+        "Technical Risks: Highly centralized, which runs counter to the core ethos of crypto and introduces significant censorship risk.",
+        "Market Risks: Often perceived as less innovative and more of a copy of Ethereum, which can deter some developers.",
+        "Regulatory Risks: Tightly linked to Binance, making it and its ecosystem a potential target for regulators."
+      ]
+    }
   };
 
   return (
@@ -2758,71 +2948,76 @@ const SIRDashboard = () => {
 
         {activeTab === 'simulator' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-sm p-6 border">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Network Workload Simulator</h3>
-              <p className="text-gray-600 mb-6">Simulate AI agent workloads to analyze network performance</p>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Configuration Panel */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Simulation Configuration</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
-                      <select
-                        value={simulatorConfig.network1}
-                        onChange={(e) => setSimulatorConfig(prev => ({ ...prev, network1: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      >
-                        {rankedNetworks.map((network) => (
-                          <option key={network.id} value={network.id}>
-                            {network.name} ({network.tier}-Tier)
-                          </option>
-                        ))}
-                      </select>
-                      <div className="mt-2 flex items-center gap-2">
-                        <NetworkLogo network={rankedNetworks.find(n => n.id === simulatorConfig.network1)} size="text-lg" />
-                        <span className="text-sm text-gray-600">
-                          {rankedNetworks.find(n => n.id === simulatorConfig.network1)?.name}
-                        </span>
-                      </div>
-                    </div>
+            <div className="bg-white rounded-xl shadow-sm p-8 border">
+              <div className="flex items-start gap-4 mb-8">
+                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Workload Simulator</h3>
+                  <p className="text-gray-600 mt-1">Compare real-world performance across different blockchain networks</p>
+                </div>
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Workload Type</label>
-                      <select
-                        value={simulatorConfig.workload}
-                        onChange={(e) => setSimulatorConfig(prev => ({ ...prev, workload: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                {/* Left Column: Configuration */}
+                <div className="lg:col-span-3 space-y-6">
+                  <h4 className="text-xl font-semibold text-gray-900">Simulation Configuration</h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Simulation Type</label>
+                    <div className="flex rounded-lg border p-1 bg-gray-100">
+                      <button 
+                        onClick={() => setSimulatorConfig(prev => ({ ...prev, simulationMode: 'duration' }))}
+                        className={`w-1/2 py-2 rounded-md text-sm font-medium transition-all ${simulatorConfig.simulationMode === 'duration' ? 'bg-white shadow' : 'text-gray-600'}`}
                       >
-                        <option value="defi">DeFi Trading Bot</option>
-                        <option value="nft">NFT Marketplace</option>
-                        <option value="gaming">Gaming/Metaverse</option>
-                        <option value="oracle">AI Oracle Network</option>
-                        <option value="social">Social Graph</option>
-                      </select>
+                        Fixed Duration
+                      </button>
+                      <button 
+                        onClick={() => setSimulatorConfig(prev => ({ ...prev, simulationMode: 'completion' }))}
+                        className={`w-1/2 py-2 rounded-md text-sm font-medium transition-all ${simulatorConfig.simulationMode === 'completion' ? 'bg-white shadow' : 'text-gray-600'}`}
+                      >
+                        Time to Completion
+                      </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Duration (hours)</label>
-                      <input
-                        type="number"
-                        value={simulatorConfig.duration}
-                        onChange={(e) => setSimulatorConfig(prev => ({ ...prev, duration: parseInt(e.target.value) || 24 }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                        min="1"
-                        max="168"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Workload Type</label>
+                    <select
+                      value={simulatorConfig.workload}
+                      onChange={(e) => setSimulatorConfig(prev => ({ ...prev, workload: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    >
+                      {Object.entries(workloadTypes).map(([key, value]) => (
+                        <option key={key} value={key}>{value.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {workloadTypes[simulatorConfig.workload]?.description}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    {simulatorConfig.simulationMode === 'duration' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Duration (hours)</label>
+                        <input
+                          type="number"
+                          value={simulatorConfig.duration}
+                          onChange={(e) => setSimulatorConfig(prev => ({ ...prev, duration: parseInt(e.target.value) || 24 }))}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                          min="1"
+                          max="168"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Intensity</label>
                       <select
                         value={simulatorConfig.intensity}
                         onChange={(e) => setSimulatorConfig(prev => ({ ...prev, intensity: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -2831,15 +3026,15 @@ const SIRDashboard = () => {
                       </select>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                  
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Total Transactions</label>
                       <input
                         type="number"
                         value={simulatorConfig.transactions}
                         onChange={(e) => setSimulatorConfig(prev => ({ ...prev, transactions: parseInt(e.target.value) || 10000 }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                         min="100"
                         max="1000000"
                       />
@@ -2849,56 +3044,157 @@ const SIRDashboard = () => {
                       <select
                         value={simulatorConfig.complexity}
                         onChange={(e) => setSimulatorConfig(prev => ({ ...prev, complexity: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                       >
                         <option value="simple">Simple</option>
                         <option value="medium">Medium</option>
                         <option value="complex">Complex</option>
+                        <option value="very_complex">Very Complex</option>
                       </select>
                     </div>
                   </div>
-
-                  <button
-                    onClick={runSimulation}
-                    disabled={isSimulating}
-                    className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSimulating ? 'Simulating...' : 'Run Simulation'}
-                  </button>
                 </div>
 
-                {/* Results Panel */}
-                {simulationResults && (
-                  <div className="space-y-6">
-                    <div className="bg-white rounded-xl shadow-sm p-6 border">
-                      <div className="flex items-center gap-3 mb-4">
+                {/* Right Column: Network Comparison */}
+                <div className="lg:col-span-2 space-y-6 flex flex-col">
+                  <h4 className="text-xl font-semibold text-gray-900">Network Comparison</h4>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Network 1</label>
+                    <select
+                      value={simulatorConfig.network1}
+                      onChange={(e) => setSimulatorConfig(prev => ({ ...prev, network1: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    >
+                      {rankedNetworks.map((network) => (
+                        <option key={network.id} value={network.id}>
+                          {network.name} ({network.tier}-Tier)
+                        </option>
+                      ))}
+                    </select>
+                    <div className="mt-2 flex items-center gap-2">
+                      <NetworkLogo network={rankedNetworks.find(n => n.id === simulatorConfig.network1)} size="text-lg" />
+                      <span className="text-sm text-gray-600">
+                        {rankedNetworks.find(n => n.id === simulatorConfig.network1)?.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Network 2</label>
+                    <select
+                      value={simulatorConfig.network2}
+                      onChange={(e) => setSimulatorConfig(prev => ({ ...prev, network2: e.target.value }))}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    >
+                      {rankedNetworks.map((network) => (
+                        <option key={network.id} value={network.id}>
+                          {network.name} ({network.tier}-Tier)
+                        </option>
+                      ))}
+                    </select>
+                     <div className="mt-2 flex items-center gap-2">
+                      <NetworkLogo network={rankedNetworks.find(n => n.id === simulatorConfig.network2)} size="text-lg" />
+                      <span className="text-sm text-gray-600">
+                        {rankedNetworks.find(n => n.id === simulatorConfig.network2)?.name}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-grow flex items-end">
+                    <button
+                      onClick={runSimulation}
+                      disabled={isSimulating}
+                      className="w-full mt-4 px-6 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-2 text-lg font-bold"
+                    >
+                      {isSimulating ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Simulating...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-5 h-5" />
+                          Run Simulation
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {simulationResults && (
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Simulation Results</h3>
+                  
+                  {/* Summary Bar */}
+                  <div className={`rounded-xl p-6 mb-8 grid grid-cols-3 gap-6 items-center border ${
+                    simulationResults.network1.metrics.performanceScore > simulationResults.network2.metrics.performanceScore ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-700">
+                        {
+                          simulatorConfig.simulationMode === 'duration'
+                            ? (simulationResults.network1.metrics.performanceScore > simulationResults.network2.metrics.performanceScore ? simulationResults.network1.network.name : simulationResults.network2.network.name)
+                            : (simulationResults.network1.metrics.completionTime < simulationResults.network2.metrics.completionTime ? simulationResults.network1.network.name : simulationResults.network2.network.name)
+                        }
+                      </div>
+                      <div className="text-sm text-green-600">Winner</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-800">
+                      {
+                          simulatorConfig.simulationMode === 'duration'
+                            ? Math.abs(simulationResults.network1.metrics.performanceScore - simulationResults.network2.metrics.performanceScore)
+                            : formatSeconds(Math.abs(simulationResults.network1.metrics.completionTime - simulationResults.network2.metrics.completionTime))
+                        }
+                      </div>
+                      <div className="text-sm text-gray-600">{simulatorConfig.simulationMode === 'duration' ? 'Performance Difference' : 'Time Difference'}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-700">${Math.abs(simulationResults.network1.metrics.totalCost - simulationResults.network2.metrics.totalCost).toFixed(2)}</div>
+                      <div className="text-sm text-purple-600">Cost Difference</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Network 1 Results */}
+                    <div className="bg-white rounded-xl p-6 border shadow-sm">
+                      <div className="flex items-center gap-4 mb-4">
                         <NetworkLogo network={simulationResults.network1.network} size="text-2xl" />
                         <div>
-                          <h4 className="text-lg font-bold text-gray-900">{simulationResults.network1.network.name}</h4>
-                          <div className="text-sm text-gray-600">Performance Score: {simulationResults.network1.metrics.performanceScore}</div>
+                          <h4 className="text-xl font-bold text-gray-900">{simulationResults.network1.network.name}</h4>
+                          <p className="text-sm text-gray-500">Performance Score: {simulationResults.network1.metrics.performanceScore}</p>
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <div className="text-lg font-bold text-blue-600">{simulationResults.network1.metrics.successRate}%</div>
-                          <div className="text-blue-700">Success Rate</div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-blue-50 p-4 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-blue-600">{simulationResults.network1.metrics.successRate}%</div>
+                          <div className="text-sm text-blue-700">Success Rate</div>
                         </div>
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <div className="text-lg font-bold text-green-600">{simulationResults.network1.metrics.effectiveTPS}</div>
-                          <div className="text-green-700">Effective TPS</div>
+                        <div className="bg-green-50 p-4 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-green-600">{simulationResults.network1.metrics.effectiveTPS}</div>
+                          <div className="text-sm text-green-700">Effective TPS</div>
                         </div>
-                        <div className="bg-purple-50 rounded-lg p-3">
-                          <div className="text-lg font-bold text-purple-600">${simulationResults.network1.metrics.totalCost}</div>
-                          <div className="text-purple-700">Total Cost</div>
+                        <div className="bg-purple-50 p-4 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-purple-600">${simulationResults.network1.metrics.totalCost}</div>
+                          <div className="text-sm text-purple-700">Total Cost</div>
                         </div>
-                        <div className="bg-orange-50 rounded-lg p-3">
-                          <div className="text-lg font-bold text-orange-600">{simulationResults.network1.metrics.avgProcessingTime}s</div>
-                          <div className="text-orange-700">Avg Processing</div>
+                        <div className="bg-orange-50 p-4 rounded-lg text-center">
+                          {simulatorConfig.simulationMode === 'duration' ? (
+                            <>
+                              <div className="text-2xl font-bold text-orange-600">{simulationResults.network1.metrics.avgProcessingTime}s</div>
+                              <div className="text-sm text-orange-700">Avg Processing</div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-2xl font-bold text-orange-600">{formatSeconds(simulationResults.network1.metrics.completionTime)}</div>
+                              <div className="text-sm text-orange-700">Time to Complete</div>
+                            </>
+                          )}
                         </div>
                       </div>
-                      
-                      <div className="mt-4 space-y-2 text-xs">
+                      <div className="text-sm space-y-2">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Successful Transactions:</span>
                           <span className="font-medium">{simulationResults.network1.metrics.successfulTransactions.toLocaleString()}</span>
@@ -2907,35 +3203,140 @@ const SIRDashboard = () => {
                           <span className="text-gray-600">Failed Transactions:</span>
                           <span className="font-medium text-red-600">{simulationResults.network1.metrics.failedTransactions.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Cost per Hour:</span>
-                          <span className="font-medium">${simulationResults.network1.metrics.costPerHour}</span>
-                        </div>
+                        {simulatorConfig.simulationMode === 'duration' &&
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Cost per Hour:</span>
+                            <span className="font-medium">${simulationResults.network1.metrics.costPerHour}</span>
+                          </div>
+                        }
                       </div>
                     </div>
-
-                    {/* Timeline Chart */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 border">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Transaction Timeline</h4>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={generateTimelineData(
-                            simulationResults.network1.metrics.totalTransactions,
-                            simulationResults.network1.metrics.successRate / 100,
-                            simulatorConfig.duration
-                          )}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="hour" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line type="monotone" dataKey="successful" stroke="#10B981" name="Successful" />
-                            <Line type="monotone" dataKey="failed" stroke="#EF4444" name="Failed" />
-                          </LineChart>
-                        </ResponsiveContainer>
+                    {/* Network 2 Results */}
+                    <div className="bg-white rounded-xl p-6 border shadow-sm">
+                      <div className="flex items-center gap-4 mb-4">
+                        <NetworkLogo network={simulationResults.network2.network} size="text-2xl" />
+                        <div>
+                          <h4 className="text-xl font-bold text-gray-900">{simulationResults.network2.network.name}</h4>
+                          <p className="text-sm text-gray-500">Performance Score: {simulationResults.network2.metrics.performanceScore}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-blue-50 p-4 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-blue-600">{simulationResults.network2.metrics.successRate}%</div>
+                          <div className="text-sm text-blue-700">Success Rate</div>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-green-600">{simulationResults.network2.metrics.effectiveTPS}</div>
+                          <div className="text-sm text-green-700">Effective TPS</div>
+                        </div>
+                        <div className="bg-purple-50 p-4 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-purple-600">${simulationResults.network2.metrics.totalCost}</div>
+                          <div className="text-sm text-purple-700">Total Cost</div>
+                        </div>
+                        <div className="bg-orange-50 p-4 rounded-lg text-center">
+                           {simulatorConfig.simulationMode === 'duration' ? (
+                            <>
+                              <div className="text-2xl font-bold text-orange-600">{simulationResults.network2.metrics.avgProcessingTime}s</div>
+                              <div className="text-sm text-orange-700">Avg Processing</div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-2xl font-bold text-orange-600">{formatSeconds(simulationResults.network2.metrics.completionTime)}</div>
+                              <div className="text-sm text-orange-700">Time to Complete</div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-sm space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Successful Transactions:</span>
+                          <span className="font-medium">{simulationResults.network2.metrics.successfulTransactions.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Failed Transactions:</span>
+                          <span className="font-medium text-red-600">{simulationResults.network2.metrics.failedTransactions.toLocaleString()}</span>
+                        </div>
+                        {simulatorConfig.simulationMode === 'duration' &&
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Cost per Hour:</span>
+                            <span className="font-medium">${simulationResults.network2.metrics.costPerHour}</span>
+                          </div>
+                        }
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
+
+              <div className="mt-12 pt-8 border-t">
+                <div className="prose max-w-none">
+                  <h2 className="text-2xl font-bold text-gray-900">Parameter Definitions</h2>
+                  
+                  <h3 className="text-xl font-semibold mt-6 mb-3">Simulation Type</h3>
+                  <p className="text-gray-600">How does the simulation mode change the results?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>Fixed Duration:</strong> Simulates network performance over a set period (e.g., 24 hours). This mode is useful for understanding a network's endurance and cost-efficiency under sustained load. The winner is determined by a Performance Score that balances speed, success rate, and cost.</li>
+                    <li><strong>Time to Completion:</strong> Simulates how long it takes for a network to process a fixed number of transactions. This mode is ideal for measuring pure speed and throughput for a specific task. The winner is the network with the fastest completion time.</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold mt-6 mb-3">Workload Types</h3>
+                  <p className="text-gray-600">What are the different workload types?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>DeFi Trading:</strong> High-frequency trading with complex smart contracts. High transaction frequency, medium transaction size, high complexity.</li>
+                    <li><strong>NFT Marketplace:</strong> Mint, trade, and transfer NFTs with metadata. Medium frequency, large transaction size, medium complexity.</li>
+                    <li><strong>Gaming:</strong> Real-time gaming transactions and state updates. Very high frequency, small transaction size, low complexity.</li>
+                    <li><strong>Payments:</strong> Simple payment transfers and settlements. High frequency, small transaction size, low complexity.</li>
+                    <li><strong>AI Agent Operations:</strong> AI agent interactions and autonomous transactions. Very high frequency, variable transaction size, high complexity.</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold mt-6 mb-3">Intensity Levels</h3>
+                  <p className="text-gray-600">What does intensity measure?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>Low (0.3x):</strong> Light network load - like a small app with occasional transactions. Reduces TPS by 70%, failure rates by 50%, costs by 30%.</li>
+                    <li><strong>Medium (1.0x):</strong> Normal daily usage patterns. No multipliers applied - baseline performance.</li>
+                    <li><strong>High (2.0x):</strong> Heavy load during peak hours or major events. Doubles TPS demand, increases failure rates by 50%, costs by 30%.</li>
+                    <li><strong>Extreme (3.0x):</strong> Maximum stress like during network congestion or flash crashes. Triples TPS demand, doubles failure rates, increases costs by 60%.</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold mt-6 mb-3">Transaction Complexity</h3>
+                  <p className="text-gray-600">How does complexity affect performance?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>Simple (1.0x):</strong> Basic transfers, simple smart contracts. Standard gas costs, normal processing time, reduced failure rates.</li>
+                    <li><strong>Medium (2.0x):</strong> Standard DeFi operations, NFT transfers. 2x gas costs, 1.5x processing time, normal failure rates.</li>
+                    <li><strong>Complex (5.0x):</strong> Multi-step operations, complex DeFi protocols. 5x gas costs, 2x processing time, 30% higher failure rates.</li>
+                    <li><strong>Very Complex (10.0x):</strong> Advanced AI operations, cross-chain bridges. 10x gas costs, 3x processing time, 60% higher failure rates.</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold mt-6 mb-3">Performance Metrics</h3>
+                  <p className="text-gray-600">What do the simulation metrics mean?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>Success Rate:</strong> Percentage of transactions that complete successfully. Based on network uptime and transaction complexity.</li>
+                    <li><strong>Effective TPS:</strong> Actual transactions per second the network can handle under the simulated load conditions.</li>
+                    <li><strong>Total Cost:</strong> Total gas fees for all transactions in the simulation period.</li>
+                    <li><strong>Average Processing Time:</strong> Time it takes for a single transaction to be processed and confirmed. (Fixed Duration mode only)</li>
+                    <li><strong>Time to Completion:</strong> Total time required to process all successful transactions. (Time to Completion mode only)</li>
+                    <li><strong>Performance Score:</strong> Weighted combination of success rate (40%), processing speed (30%), and cost efficiency (30%). (Fixed Duration mode only)</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold mt-6 mb-3">How the Simulation Works</h3>
+                  <p className="text-gray-600">What factors does the simulator consider?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>Network Base Performance:</strong> Uses real TPS, gas prices, and uptime data from each network.</li>
+                    <li><strong>Workload Characteristics:</strong> Applies workload-specific patterns (frequency, complexity, failure tolerance).</li>
+                    <li><strong>Intensity Multipliers:</strong> Adjusts performance based on network stress levels.</li>
+                    <li><strong>Complexity Multipliers:</strong> Modifies gas costs, processing time, and failure rates based on transaction complexity.</li>
+                    <li><strong>Real-time Factors:</strong> Considers network congestion, transaction queuing, and block space competition.</li>
+                  </ul>
+
+                  <h3 className="text-xl font-semibold mt-6 mb-3">Real-World Examples</h3>
+                  <p className="text-gray-600">What scenarios do these settings represent?</p>
+                  <ul className="list-disc list-inside space-y-2 text-gray-600">
+                    <li><strong>Low Intensity + Simple:</strong> Small payment app, basic token transfers, simple NFT minting.</li>
+                    <li><strong>High Intensity + Complex:</strong> DeFi protocol during market volatility, AI agent making rapid complex decisions.</li>
+                    <li><strong>Extreme Intensity + Very Complex:</strong> Flash loan attacks, MEV bot operations, AI agents competing for opportunities.</li>
+                    <li><strong>Medium Intensity + Medium Complexity:</strong> Typical NFT marketplace during a popular drop, standard DeFi yield farming.</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -3105,60 +3506,47 @@ const SIRDashboard = () => {
                       {/* Expandable Details */}
                       {isExpanded && (
                         <div className="px-4 pb-4 border-t">
-                          <div className="grid grid-cols-2 gap-4 pt-4">
-                            {/* Growth Drivers */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                            {/* AI Integration */}
                             <div>
-                              <h5 className="font-medium text-gray-900 mb-2">Growth Drivers</h5>
-                              <ul className="space-y-1.5 text-sm">
-                                {network.developerActivity > 80 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                    <span>Developer activity growth: {network.developerActivity}%</span>
+                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                AI Integration & Tech
+                              </h5>
+                              <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
+                                {growthAnalysisData[network.id]?.aiIntegration.map((tip, i) => (
+                                  <li key={i}>
+                                    <span>{tip}</span>
                                   </li>
-                                )}
-                                {network.communitySize > 100000 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                    <span>Community size: {(network.communitySize/1000).toFixed(1)}k members</span>
-                                  </li>
-                                )}
-                                {network.parallel > 90 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                                    <span>High TPS: {network.parallel.toFixed(1)}k</span>
-                                  </li>
-                                )}
+                                ))}
                               </ul>
                             </div>
-
-                            {/* Opportunities & Risks */}
+                            {/* Growth Drivers */}
                             <div>
-                              <h5 className="font-medium text-gray-900 mb-2">Key Opportunities & Risks</h5>
-                              <ul className="space-y-1.5 text-sm">
-                                {network.marketShare < 10 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                    <span>Large market share growth potential</span>
+                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                Growth Drivers & Market
+                              </h5>
+                              <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
+                                {growthAnalysisData[network.id]?.growthDrivers.map((tip, i) => (
+                                  <li key={i}>
+                                    <span>{tip}</span>
                                   </li>
-                                )}
-                                {network.change30d > 5 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                    <span>Strong momentum: +{network.change30d}% (30d)</span>
+                                ))}
+                              </ul>
+                            </div>
+                            {/* Risk Assessment */}
+                            <div>
+                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                Risk Assessment
+                              </h5>
+                              <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
+                                {growthAnalysisData[network.id]?.riskAssessment.map((tip, i) => (
+                                  <li key={i}>
+                                    <span>{tip}</span>
                                   </li>
-                                )}
-                                {network.marketCorrelation > 0.8 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                                    <span>High market correlation ({network.marketCorrelation.toFixed(2)})</span>
-                                  </li>
-                                )}
-                                {network.reliability < 90 && (
-                                  <li className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                                    <span>Reliability concerns: {network.reliability}%</span>
-                                  </li>
-                                )}
+                                ))}
                               </ul>
                             </div>
                           </div>
