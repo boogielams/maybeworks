@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter, AreaChart, Area } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Star, Zap, Search, Heart, Download, AlertTriangle, Eye, Calculator, BarChart3, Activity, Brain, Target, Sparkles, Info, Wallet, Clock, Users, ChartBar, ArrowRight, DollarSign, BarChart2 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ScatterChart, Scatter } from 'recharts';
+import { TrendingUp, TrendingDown, Minus, Star, Zap, Search, Heart, Download, AlertTriangle, Calculator, BarChart3, Activity, Brain, Target, Sparkles, Info, Clock } from 'lucide-react';
 import solanaLogo from './assets/solana.svg';
 import { useBaseData } from './services/blockchainData';
 import { useEthereumData } from './services/ethereumData';
@@ -100,10 +100,12 @@ const NetworkLogo = ({ network, size = 'text-3xl', className = '' }) => {
 
   const logoUrl = getLogoUrl(network.id);
 
-  useEffect(() => {
-    setImageLoaded(false);
-    setImageError(false);
-  }, [logoUrl]);
+  /* This useEffect is causing the logo to revert to an emoji on data refresh.
+   By commenting it out, the component will remember that the image has loaded. */
+  // useEffect(() => {
+  //   setImageLoaded(false);
+  //   setImageError(false);
+  // }, [logoUrl]);
 
   return (
     <div
@@ -148,7 +150,7 @@ const mockNetworks = [
     change7d: 2.1,
     change30d: 8.4,
     speed: 92,
-    cost: 88,
+    cost: 94,
     reliability: 92,
     devExp: 95,
     liquidity: 98,
@@ -182,7 +184,7 @@ const mockNetworks = [
     change7d: 3.2,
     change30d: 15.7,
     speed: 75,
-    cost: 85,
+    cost: 97,
     reliability: 88,
     devExp: 92,
     liquidity: 89,
@@ -192,8 +194,8 @@ const mockNetworks = [
     marketCap: '$8.1B',
     volume24h: '$456M',
     tps: 100,
-    finality: '2.1s',
-    gasPrice: '$0.05',
+    finality: '4s',
+    gasPrice: '$0.000051',
     uptime: 99.2,
     ecosystem: 'Growing',
     founded: 2023,
@@ -216,7 +218,7 @@ const mockNetworks = [
     change7d: 5.3,
     change30d: 12.1,
     speed: 98,
-    cost: 95,
+    cost: 99,
     reliability: 89,
     devExp: 65,
     liquidity: 45,
@@ -227,7 +229,7 @@ const mockNetworks = [
     volume24h: '$145M',
     tps: 12000,
     finality: '0.4s',
-    gasPrice: '$0.0008',
+    gasPrice: '$0.0000000005003',
     uptime: 99.2,
     ecosystem: 'Emerging',
     founded: 2022,
@@ -250,7 +252,7 @@ const mockNetworks = [
     change7d: 4.2,
     change30d: 18.5,
     speed: 95,
-    cost: 90,
+    cost: 88,
     reliability: 85,
     devExp: 75,
     liquidity: 55,
@@ -261,7 +263,7 @@ const mockNetworks = [
     volume24h: '$89M',
     tps: 8000,
     finality: '0.5s',
-    gasPrice: '$0.001',
+    gasPrice: '$0.005',
     uptime: 99.5,
     ecosystem: 'Emerging',
     founded: 2022,
@@ -284,7 +286,7 @@ const mockNetworks = [
     change7d: -1.1,
     change30d: 4.2,
     speed: 65,
-    cost: 82,
+    cost: 92,
     reliability: 88,
     devExp: 89,
     liquidity: 91,
@@ -295,7 +297,7 @@ const mockNetworks = [
     volume24h: '$892M',
     tps: 40,
     finality: '7.2s',
-    gasPrice: '$0.08',
+    gasPrice: '$0.0005',
     uptime: 99.1,
     ecosystem: 'Mature',
     founded: 2021,
@@ -318,7 +320,7 @@ const mockNetworks = [
     change7d: 2.1,
     change30d: 6.8,
     speed: 70,
-    cost: 80,
+    cost: 96,
     reliability: 85,
     devExp: 88,
     liquidity: 85,
@@ -329,7 +331,7 @@ const mockNetworks = [
     volume24h: '$567M',
     tps: 45,
     finality: '6.5s',
-    gasPrice: '$0.06',
+    gasPrice: '$0.00006',
     uptime: 99.3,
     ecosystem: 'Mature',
     founded: 2021,
@@ -363,7 +365,7 @@ const mockNetworks = [
     volume24h: '$623M',
     tps: 350,
     finality: '2.3s',
-    gasPrice: '$0.001',
+    gasPrice: '$0.008',
     uptime: 98.8,
     ecosystem: 'Mature',
     founded: 2017,
@@ -385,8 +387,8 @@ const mockNetworks = [
     change24h: -0.5,
     change7d: 1.2,
     change30d: 3.8,
-    speed: 78,
-    cost: 75,
+    speed: 73,
+    cost: 98,
     reliability: 80,
     devExp: 82,
     liquidity: 72,
@@ -395,9 +397,9 @@ const mockNetworks = [
     payments: 62,
     marketCap: '$8.9B',
     volume24h: '$345M',
-    tps: 4500,
+    tps: 365,
     finality: '3s',
-    gasPrice: '$0.02',
+    gasPrice: '$0.0000306',
     uptime: 99.7,
     ecosystem: 'Mature',
     founded: 2020,
@@ -420,7 +422,7 @@ const mockNetworks = [
     change7d: -0.8,
     change30d: 2.1,
     speed: 85,
-    cost: 70,
+    cost: 90,
     reliability: 75,
     devExp: 78,
     liquidity: 88,
@@ -431,7 +433,7 @@ const mockNetworks = [
     volume24h: '$1.8B',
     tps: 300,
     finality: '3s',
-    gasPrice: '$0.15',
+    gasPrice: '$0.003',
     uptime: 99.2,
     ecosystem: 'Mature',
     founded: 2020,
@@ -454,7 +456,7 @@ const mockNetworks = [
     change7d: -0.5,
     change30d: -2.1,
     speed: 25,
-    cost: 35,
+    cost: 75,
     reliability: 95,
     devExp: 98,
     liquidity: 100,
@@ -465,7 +467,7 @@ const mockNetworks = [
     volume24h: '$12.4B',
     tps: 15,
     finality: '15s',
-    gasPrice: '$2.50',
+    gasPrice: '$0.04',
     uptime: 99.95,
     ecosystem: 'Dominant',
     founded: 2015,
@@ -493,6 +495,48 @@ const tierColors = {
   C: { bg: 'bg-gradient-to-r from-gray-400 to-gray-600', text: 'text-white', border: 'border-gray-400', light: 'bg-gray-50', accent: '#6b7280' },
   D: { bg: 'bg-gradient-to-r from-red-400 to-pink-500', text: 'text-white', border: 'border-red-400', light: 'bg-red-50', accent: '#f87171' },
   F: { bg: 'bg-gradient-to-r from-red-600 to-red-800', text: 'text-white', border: 'border-red-600', light: 'bg-red-50', accent: '#dc2626' }
+};
+
+const MicroChart = React.memo(({ data }) => {
+  if (!data || data.length < 2) {
+    return <div className="h-8 w-24" />;
+  }
+
+  const scores = data.map(d => d.score);
+  const minScore = Math.min(...scores);
+  const maxScore = Math.max(...scores);
+
+  // By dynamically adjusting the vertical domain of the chart based on its own data range,
+  // we can exaggerate the visual representation of score changes.
+  const padding = Math.max((maxScore - minScore) * 0.2, 2);
+
+  const trendColor = data[data.length - 1].score >= data[0].score ? '#10B981' : '#EF4444';
+  
+  return (
+    <div className="h-8 w-24">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data}>
+          <YAxis domain={[minScore - padding, maxScore + padding]} hide />
+          <Line
+            type="monotone"
+            dataKey="score"
+            stroke={trendColor}
+            strokeWidth={2}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+});
+
+const getTierFromScore = (score) => {
+  if (score >= 90) return 'S';
+  if (score >= 80) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 60) return 'C';
+  if (score >= 50) return 'D';
+  return 'F';
 };
 
 // Generate comprehensive historical data
@@ -638,8 +682,8 @@ const SIRDashboard = () => {
         return {
           ...network,
           tps: baseData.tps || network.tps,
-          gasPrice: baseData.gasPrice || network.gasPrice,
-          finality: baseData.finality || network.finality,
+          // gasPrice: baseData.gasPrice || network.gasPrice, // Use mock data
+          // finality: baseData.finality || network.finality, // Use mock data
           uptime: baseData.uptime || network.uptime,
           marketCap: baseData.marketCap || network.marketCap,
           volume24h: baseData.volume24h || network.volume24h,
@@ -653,7 +697,7 @@ const SIRDashboard = () => {
         return {
           ...network,
           tps: ethData.tps || network.tps,
-          gasPrice: ethData.gasPrice || network.gasPrice,
+          // gasPrice: ethData.gasPrice || network.gasPrice, // Use mock data
           finality: ethData.finality || network.finality,
           uptime: ethData.uptime || network.uptime,
           marketCap: ethData.marketCap || network.marketCap,
@@ -683,7 +727,7 @@ const SIRDashboard = () => {
         return {
           ...network,
           tps: polygonData.tps || network.tps,
-          gasPrice: polygonData.gasPrice || network.gasPrice,
+          // gasPrice: polygonData.gasPrice || network.gasPrice, // Use mock data
           finality: polygonData.finality || network.finality,
           uptime: polygonData.uptime || network.uptime,
           marketCap: polygonData.marketCap || network.marketCap,
@@ -698,7 +742,7 @@ const SIRDashboard = () => {
         return {
           ...network,
           tps: bscData.tps || network.tps,
-          gasPrice: bscData.gasPrice || network.gasPrice,
+          // gasPrice: bscData.gasPrice || network.gasPrice, // Use mock data
           finality: bscData.finality || network.finality,
           uptime: bscData.uptime || network.uptime,
           marketCap: bscData.marketCap || network.marketCap,
@@ -713,7 +757,7 @@ const SIRDashboard = () => {
         return {
           ...network,
           tps: seiData.tps || network.tps,
-          gasPrice: seiData.gasPrice || network.gasPrice,
+          // gasPrice: seiData.gasPrice || network.gasPrice, // Use mock data
           finality: seiData.finality || network.finality,
           uptime: seiData.uptime || network.uptime,
           marketCap: seiData.marketCap || network.marketCap,
@@ -728,7 +772,7 @@ const SIRDashboard = () => {
         return {
           ...network,
           tps: suiData.tps || network.tps,
-          gasPrice: suiData.gasPrice || network.gasPrice,
+          // gasPrice: suiData.gasPrice || network.gasPrice, // Use mock data
           finality: suiData.finality || network.finality,
           uptime: suiData.uptime || network.uptime,
           marketCap: suiData.marketCap || network.marketCap,
@@ -737,6 +781,25 @@ const SIRDashboard = () => {
           lastUpdated: suiData.lastUpdated,
           isLiveData: true,
           dataQuality: suiData.dataQuality
+        };
+      }
+       if (network.id === 'arbitrum' && baseData) { // Assuming arbitrum data comes from a service
+        return {
+          ...network,
+          // gasPrice: baseData.gasPrice || network.gasPrice, // Use mock data
+        };
+      }
+       if (network.id === 'optimism' && baseData) { // Assuming optimism data comes from a service
+        return {
+          ...network,
+          // gasPrice: baseData.gasPrice || network.gasPrice, // Use mock data
+        };
+      }
+       if (network.id === 'avalanche' && baseData) { // Assuming avalanche data comes from a service
+        return {
+          ...network,
+          // tps: baseData.tps || network.tps, // Use mock data
+          // gasPrice: baseData.gasPrice || network.gasPrice, // Use mock data
         };
       }
       return network;
@@ -896,6 +959,12 @@ const SIRDashboard = () => {
     very_complex: { gasMultiplier: 10.0, failureRate: 1.6, processingTime: 3.0 }
   };
 
+  const formatCost = (cost) => {
+    if (cost === 0) return '0.00';
+    if (cost > 0 && cost < 0.01) return cost.toFixed(8);
+    return cost.toFixed(2);
+  };
+
   const simulateNetwork = (network) => {
     const intensity = intensityMultipliers[simulatorConfig.intensity];
     const complexity = complexityMultipliers[simulatorConfig.complexity];
@@ -911,7 +980,7 @@ const SIRDashboard = () => {
     const effectiveTPS = Math.round(network.tps * (1 - (1 - effectiveSuccessRate) * 0.5) * Math.min(1, intensity.tps * 0.5));
 
     const gasPrice = parseFloat(network.gasPrice.replace('$', ''));
-    const totalCost = (successfulTransactions * gasPrice * complexity.gasMultiplier * intensity.cost).toFixed(2);
+    const rawTotalCost = successfulTransactions * gasPrice * complexity.gasMultiplier * intensity.cost;
     
     const performanceScore = Math.round(
       (effectiveSuccessRate * 40) +
@@ -922,14 +991,14 @@ const SIRDashboard = () => {
     let metrics = {
       successRate: (effectiveSuccessRate * 100).toFixed(1),
       effectiveTPS: effectiveTPS,
-      totalCost,
+      totalCost: formatCost(rawTotalCost),
       performanceScore,
       successfulTransactions,
       failedTransactions,
     };
 
     if (simulatorConfig.simulationMode === 'duration') {
-      metrics.costPerHour = (totalCost / simulatorConfig.duration).toFixed(2);
+      metrics.costPerHour = formatCost(rawTotalCost / simulatorConfig.duration);
       metrics.avgProcessingTime = (parseFloat(network.finality.replace('s', '')) * complexity.processingTime).toFixed(3);
     } else { // completion mode
       metrics.completionTime = successfulTransactions > 0 && effectiveTPS > 0 ? successfulTransactions / effectiveTPS : 0;
@@ -1013,10 +1082,14 @@ const SIRDashboard = () => {
       );
     }
     return filtered
-      .map(network => ({
-        ...network,
-        adjustedScore: parseFloat(calculateUseCaseScore(network, selectedUseCase))
-      }))
+      .map(network => {
+        const adjustedScore = parseFloat(calculateUseCaseScore(network, selectedUseCase));
+        return {
+          ...network,
+          adjustedScore: adjustedScore,
+          tier: getTierFromScore(adjustedScore)
+        };
+      })
       .sort((a, b) => b.adjustedScore - a.adjustedScore)
       .map((network, index) => ({ ...network, adjustedRank: index + 1 }));
   }, [selectedUseCase, searchTerm, calculateUseCaseScore, getNetworksWithLiveData]);
@@ -1490,165 +1563,6 @@ const SIRDashboard = () => {
     );
   };
 
-  // Add NetworkAnalysisModal component
-  const NetworkAnalysisModal = ({ network, isOpen, onClose }) => {
-    if (!network) return null;
-    
-    const growth = network.prediction6m - network.adjustedScore;
-    const confidence = (
-      (network.developerActivity / 100 * 0.3) +
-      (network.marketCorrelation * 0.3) +
-      (network.reliability / 100 * 0.4)
-    ) * 100;
-
-    return (
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <NetworkLogo network={network} size="text-3xl" />
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">{network.name}</h3>
-                <div className="text-sm text-gray-500">6-Month Growth Forecast</div>
-              </div>
-            </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Prediction Summary */}
-          <div className="grid grid-cols-4 gap-4">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-500">Current Score</div>
-              <div className="text-lg font-bold text-gray-900">{network.adjustedScore}</div>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-500">Predicted Score</div>
-              <div className="text-lg font-bold text-gray-900">{network.prediction6m}</div>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-500">Growth</div>
-              <div className={`text-lg font-bold ${growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {growth > 0 ? '+' : ''}{growth.toFixed(1)}
-              </div>
-            </div>
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-500">Confidence</div>
-              <div className="text-lg font-bold text-gray-900">{confidence.toFixed(0)}%</div>
-            </div>
-          </div>
-
-          {/* Analysis Sections */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Growth Drivers */}
-            <div className="p-4 border rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Growth Drivers</h4>
-              <ul className="space-y-2 text-sm">
-                {network.developerActivity > 80 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Strong developer ecosystem with {network.developerActivity}% activity growth</span>
-                  </li>
-                )}
-                {network.communitySize > 100000 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Large and engaged community ({(network.communitySize/1000).toFixed(1)}k members)</span>
-                  </li>
-                )}
-                {network.parallel > 90 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Superior parallel processing capabilities</span>
-                  </li>
-                )}
-                {network.reliability > 95 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Exceptional network reliability ({network.reliability}%)</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Opportunities */}
-            <div className="p-4 border rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Opportunities</h4>
-              <ul className="space-y-2 text-sm">
-                {network.marketShare < 10 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    <span>Significant room for market share growth</span>
-                  </li>
-                )}
-                {network.change30d > 5 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    <span>Strong recent momentum (+{network.change30d}% 30d)</span>
-                  </li>
-                )}
-                {network.developerActivity > 70 && network.marketShare < 15 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    <span>High developer interest relative to market share</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Challenges */}
-            <div className="p-4 border rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Challenges</h4>
-              <ul className="space-y-2 text-sm">
-                {network.marketCorrelation > 0.8 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                    <span>High correlation with market movements</span>
-                  </li>
-                )}
-                {network.reliability < 90 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                    <span>Network reliability needs improvement</span>
-                  </li>
-                )}
-                {network.communitySize < 50000 && (
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                    <span>Limited community size could slow adoption</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Technical Analysis */}
-            <div className="p-4 border rounded-lg">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Technical Analysis</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                  <span>TPS: {network.parallel.toFixed(1)}k</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                  <span>Reliability: {network.reliability}%</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                  <span>Market Correlation: {network.marketCorrelation.toFixed(2)}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </Modal>
-    );
-  };
-
   // Add expanded panels state
   const [expandedPanels, setExpandedPanels] = useState(new Set());
 
@@ -1805,8 +1719,15 @@ const SIRDashboard = () => {
       return (parseFloat(betAmount) * selectedOutcome.odds - parseFloat(betAmount)).toFixed(2);
     };
 
+    const getBetButtonColor = () => {
+      if (!selectedOutcome) return 'from-purple-500 to-indigo-600';
+      return selectedOutcome.name === 'Yes'
+        ? 'from-green-500 to-teal-600'
+        : 'from-red-500 to-pink-600';
+    };
+
     return (
-      <div className="bg-gray-50 rounded-xl border p-6 mt-6">
+      <div className="bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 rounded-xl border p-6 mt-6 shadow-inner">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Prediction Market</h3>
           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -1815,25 +1736,31 @@ const SIRDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg p-4 mb-4 border">
+        <div className="bg-white rounded-lg p-4 mb-4 border shadow-sm">
           <p className="font-semibold text-center text-gray-800">{market.question}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
-          {market.outcomes.map((outcome) => (
-            <button
-              key={outcome.name}
-              onClick={() => setSelectedOutcome(outcome)}
-              className={`p-4 rounded-xl text-center transition-all duration-200 ${
-                selectedOutcome?.name === outcome.name
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'bg-white border hover:bg-gray-100'
-              }`}
-            >
-              <div className="font-bold text-xl">{outcome.name}</div>
-              <div className="text-lg">{outcome.odds.toFixed(2)}x</div>
-            </button>
-          ))}
+          {market.outcomes.map((outcome) => {
+            const isSelected = selectedOutcome?.name === outcome.name;
+            const isYes = outcome.name === 'Yes';
+
+            return (
+              <button
+                key={outcome.name}
+                onClick={() => setSelectedOutcome(outcome)}
+                className={`p-4 rounded-xl text-center transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2
+                  ${isSelected
+                    ? (isYes ? 'bg-gradient-to-br from-green-400 to-teal-500 text-white shadow-lg border-transparent' : 'bg-gradient-to-br from-red-500 to-pink-500 text-white shadow-lg border-transparent')
+                    : `bg-white border border-gray-200 hover:shadow-md ${isYes ? 'hover:bg-green-50 focus:ring-green-400' : 'hover:bg-red-50 focus:ring-red-400'}`
+                  }
+                `}
+              >
+                <div className="font-bold text-xl">{outcome.name}</div>
+                <div className={`text-lg ${isSelected ? 'text-white' : 'text-gray-800'}`}>{outcome.odds.toFixed(2)}x</div>
+              </button>
+            );
+          })}
         </div>
         
         <div className="space-y-4">
@@ -1849,7 +1776,7 @@ const SIRDashboard = () => {
           </div>
 
           {selectedOutcome && betAmount > 0 && (
-            <div className="bg-white rounded-lg p-4 border grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg p-4 border grid grid-cols-2 gap-4 shadow-sm">
               <div className="text-center">
                 <div className="text-sm text-gray-500">Potential Payout</div>
                 <div className="text-xl font-bold text-green-600">${calculatePotentialPayout()}</div>
@@ -1863,7 +1790,7 @@ const SIRDashboard = () => {
 
           <button
             disabled={!selectedOutcome || !betAmount || betAmount <= 0}
-            className="w-full py-3 px-4 rounded-lg font-semibold text-lg text-white transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full py-3 px-4 rounded-lg font-semibold text-lg text-white transition-all duration-300 bg-gradient-to-r ${getBetButtonColor()} hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105`}
           >
             Place Bet
           </button>
@@ -2306,54 +2233,59 @@ const SIRDashboard = () => {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <>
+          <div className="space-y-6">
             {/* Main Leaderboard - First and Prominent */}
             <div className="bg-white rounded-xl shadow-sm border">
               <div className="p-6 border-b">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <InfoTooltip 
-                      content={
-                        <div>
-                          <div className="font-semibold mb-2">SIR Score Framework</div>
-                          <div className="space-y-1 text-xs">
-                            <div><strong>SIR</strong> = Speed + Intelligence + Reliability</div>
-                            <div>• <strong>Speed:</strong> TPS, finality, latency (24%)</div>
-                            <div>• <strong>Cost:</strong> Gas fees, transaction costs (22%)</div>
-                            <div>• <strong>Reliability:</strong> Uptime, security, stability (19%)</div>
-                            <div>• <strong>Dev Experience:</strong> Tooling, documentation, community (15%)</div>
-                            <div>• <strong>Liquidity:</strong> TVL, trading volume (5%)</div>
-                            <div>• <strong>Security:</strong> Audit history, attack resistance (5%)</div>
-                            <div>• <strong>Parallel:</strong> Concurrent processing capability (5%)</div>
-                            <div>• <strong>Payments:</strong> Payment infrastructure quality (5%)</div>
+                  <div className="flex items-start gap-5">
+                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                      <BarChart3 className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <InfoTooltip 
+                        content={
+                          <div>
+                            <div className="font-semibold mb-2">SIR Score Framework</div>
+                            <div className="space-y-1 text-xs">
+                              <div><strong>SIR</strong> = Speed + Intelligence + Reliability</div>
+                              <div>• <strong>Speed:</strong> TPS, finality, latency (24%)</div>
+                              <div>• <strong>Cost:</strong> Gas fees, transaction costs (22%)</div>
+                              <div>• <strong>Reliability:</strong> Uptime, security, stability (19%)</div>
+                              <div>• <strong>Dev Experience:</strong> Tooling, documentation, community (15%)</div>
+                              <div>• <strong>Liquidity:</strong> TVL, trading volume (5%)</div>
+                              <div>• <strong>Security:</strong> Audit history, attack resistance (5%)</div>
+                              <div>• <strong>Parallel:</strong> Concurrent processing capability (5%)</div>
+                              <div>• <strong>Payments:</strong> Payment infrastructure quality (5%)</div>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-300">
+                              Weights adjust based on your selected use case or AI analysis.
+                            </div>
                           </div>
-                          <div className="mt-2 text-xs text-gray-300">
-                            Weights adjust based on your selected use case or AI analysis.
-                          </div>
+                        }
+                      >
+                        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">AI Readiness Leaderboard</h2>
+                      </InfoTooltip>
+                      <p className="text-gray-600 mt-1">
+                        {customWeights 
+                          ? `Custom ranking for: ${aiResponse?.projectType}` 
+                          : `Ranked by ${selectedUseCase.replace(/([A-Z])/g, ' $1').toLowerCase()} agent suitability`
+                        }
+                      </p>
+                      {customWeights && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                            AI-Optimized Weights
+                          </span>
+                          <button
+                            onClick={resetToGeneral}
+                            className="text-xs text-gray-500 hover:text-gray-700 underline"
+                          >
+                            Reset to default
+                          </button>
                         </div>
-                      }
-                    >
-                      <h2 className="text-2xl font-bold text-gray-900">AI Readiness Leaderboard</h2>
-                    </InfoTooltip>
-                    <p className="text-gray-600 mt-1">
-                      {customWeights 
-                        ? `Custom ranking for: ${aiResponse?.projectType}` 
-                        : `Ranked by ${selectedUseCase.replace(/([A-Z])/g, ' $1').toLowerCase()} agent suitability`
-                      }
-                    </p>
-                    {customWeights && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
-                          AI-Optimized Weights
-                        </span>
-                        <button
-                          onClick={resetToGeneral}
-                          className="text-xs text-gray-500 hover:text-gray-700 underline"
-                        >
-                          Reset to default
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                   <div>
                     <button 
@@ -2524,8 +2456,10 @@ const SIRDashboard = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xl font-bold text-gray-900">{network.adjustedScore}</div>
-                          <div className="text-sm text-gray-500">Predicted: {network.prediction6m}</div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-xl font-bold text-gray-900">{network.adjustedScore}</div>
+                            <MicroChart data={historicalData[network.id]} />
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-semibold text-gray-900">{network.tps.toLocaleString()}</div>
@@ -2777,11 +2711,23 @@ const SIRDashboard = () => {
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {activeTab === 'analytics' && (
           <div className="space-y-6">
+            {/* Page Header */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border">
+              <div className="flex items-start gap-5">
+                <div className="bg-gradient-to-br from-green-500 to-cyan-600 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                  <Activity className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-cyan-600 bg-clip-text text-transparent">Advanced Analytics</h3>
+                  <p className="text-gray-600 mt-1">Dive deeper into market trends and ecosystem metrics.</p>
+                </div>
+              </div>
+            </div>
             {/* Market Correlation */}
             <div className="bg-white rounded-xl shadow-sm p-6 border">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Market Cap vs SIR Score Correlation</h3>
@@ -2949,12 +2895,12 @@ const SIRDashboard = () => {
         {activeTab === 'simulator' && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-8 border">
-              <div className="flex items-start gap-4 mb-8">
+              <div className="flex items-start gap-5 mb-8">
                 <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-3 flex-shrink-0 shadow-lg">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Workload Simulator</h3>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-indigo-600 bg-clip-text text-transparent">Workload Simulator</h3>
                   <p className="text-gray-600 mt-1">Compare real-world performance across different blockchain networks</p>
                 </div>
               </div>
@@ -3143,13 +3089,68 @@ const SIRDashboard = () => {
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-800">
-                      {
-                          simulatorConfig.simulationMode === 'duration'
-                            ? Math.abs(simulationResults.network1.metrics.performanceScore - simulationResults.network2.metrics.performanceScore)
-                            : formatSeconds(Math.abs(simulationResults.network1.metrics.completionTime - simulationResults.network2.metrics.completionTime))
-                        }
+                        {(() => {
+                          if (simulatorConfig.simulationMode === 'duration') {
+                            const score1 = simulationResults.network1.metrics.performanceScore;
+                            const score2 = simulationResults.network2.metrics.performanceScore;
+                            const winnerScore = Math.max(score1, score2);
+                            const loserScore = Math.min(score1, score2);
+                            if (loserScore === 0 && winnerScore > 0) return '∞%';
+                            if (loserScore === 0) return '0%';
+                            const percentageDiff = ((winnerScore - loserScore) / loserScore) * 100;
+                            return `${percentageDiff.toFixed(0)}%`;
+                          } else {
+                            const time1 = simulationResults.network1.metrics.completionTime;
+                            const time2 = simulationResults.network2.metrics.completionTime;
+                            const winnerTime = Math.min(time1, time2);
+                            const loserTime = Math.max(time1, time2);
+                            if (loserTime === 0) return '0%';
+                            const percentageDiff = ((loserTime - winnerTime) / loserTime) * 100;
+                            return `${percentageDiff.toFixed(0)}%`;
+                          }
+                        })()}
                       </div>
-                      <div className="text-sm text-gray-600">{simulatorConfig.simulationMode === 'duration' ? 'Performance Difference' : 'Time Difference'}</div>
+                      <div className="text-sm text-gray-600 inline-flex items-center justify-center">
+                        {simulatorConfig.simulationMode === 'duration' ? (
+                          <>
+                            Better Performance
+                            <InfoTooltip
+                              content={
+                                <div>
+                                  <div className="font-semibold mb-2">Better Performance</div>
+                                  <p className="text-xs space-y-1">
+                                    The percentage by which the winning network's score is higher than the loser's.
+                                  </p>
+                                  <p className="text-xs mt-2 text-gray-400">
+                                    Formula: ((Winner - Loser) / Loser) * 100
+                                  </p>
+                                </div>
+                              }
+                            >
+                              <span/>
+                            </InfoTooltip>
+                          </>
+                        ) : (
+                          <>
+                            Faster Completion
+                            <InfoTooltip
+                              content={
+                                <div>
+                                  <div className="font-semibold mb-2">Faster Completion</div>
+                                  <p className="text-xs space-y-1">
+                                    The percentage by which the winning network was faster than the loser.
+                                  </p>
+                                  <p className="text-xs mt-2 text-gray-400">
+                                    Formula: ((Loser Time - Winner Time) / Loser Time) * 100
+                                  </p>
+                                </div>
+                              }
+                            >
+                              <span/>
+                            </InfoTooltip>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-700">${Math.abs(simulationResults.network1.metrics.totalCost - simulationResults.network2.metrics.totalCost).toFixed(2)}</div>
@@ -3345,7 +3346,15 @@ const SIRDashboard = () => {
         {activeTab === 'calculator' && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 border">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">AI Agent Cost Calculator</h3>
+              <div className="flex items-start gap-5 mb-6">
+                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                  <Calculator className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">AI Agent Cost Calculator</h3>
+                  <p className="text-gray-600 mt-1">Estimate your operational costs on different networks.</p>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
@@ -3415,9 +3424,9 @@ const SIRDashboard = () => {
                               <span className="font-medium">{network.name}</span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm">${network.dailyCost.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-sm">${network.monthlyCost.toFixed(2)}</td>
-                          <td className="px-6 py-4 text-sm font-bold">${network.annualCost.toFixed(2)}</td>
+                          <td className="px-6 py-4 text-sm">${formatCost(network.dailyCost)}</td>
+                          <td className="px-6 py-4 text-sm">${formatCost(network.monthlyCost)}</td>
+                          <td className="px-6 py-4 text-sm font-bold">${formatCost(network.annualCost)}</td>
                           <td className="px-6 py-4 text-sm">
                             {network.id !== 'ethereum' && (
                               <span className={savings > 0 ? 'text-green-600' : 'text-red-600'}>
@@ -3438,8 +3447,15 @@ const SIRDashboard = () => {
         {activeTab === 'predictions' && (
           <div className="space-y-4">
             <div className="bg-white rounded-xl shadow-sm p-6 border mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Network Growth Predictions</h3>
-              <p className="text-sm text-gray-500">6-Month Growth Forecast, Ordered by Projected Gains</p>
+              <div className="flex items-start gap-5">
+                <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">Network Growth Predictions</h3>
+                  <p className="text-gray-600 mt-1">6-Month Growth Forecast, Ordered by Projected Gains</p>
+                </div>
+              </div>
             </div>
 
             {/* Network Predictions List */}
@@ -3457,122 +3473,120 @@ const SIRDashboard = () => {
                   const isExpanded = expandedPanels.has(network.id);
 
                   return (
-                    <div key={network.id} className="bg-white rounded-lg border">
-                      {/* Main Panel */}
-                      <div className="p-4">
+                    <div key={network.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-300">
+                      <button
+                        onClick={() => togglePanel(network.id)}
+                        className="w-full p-4 text-left hover:bg-gray-50 focus:outline-none transition-colors duration-200"
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
-                            <NetworkLogo network={network} size="text-2xl" />
+                            <NetworkLogo network={network} size="text-3xl" />
                             <div>
-                              <h4 className="font-medium text-gray-900">{network.name}</h4>
+                              <h4 className="font-semibold text-lg text-gray-900">{network.name}</h4>
                               <div className="text-sm text-gray-500">
                                 Current Rank #{rankedNetworks.findIndex(n => n.id === network.id) + 1}
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center gap-6">
+
+                          <div className="flex items-center gap-8">
                             <div className="text-right">
-                              <div className="text-sm text-gray-500">Current Score</div>
-                              <div className="font-medium">{network.adjustedScore}</div>
+                              <div className="text-xs text-gray-500 uppercase tracking-wider">Current</div>
+                              <div className="font-bold text-lg text-gray-800">{network.adjustedScore}</div>
                             </div>
                             <div className="text-right">
-                              <div className="text-sm text-gray-500">Predicted</div>
-                              <div className="font-medium">{network.prediction6m}</div>
+                              <div className="text-xs text-gray-500 uppercase tracking-wider">Predicted</div>
+                              <div className="font-bold text-lg text-gray-800">{network.prediction6m}</div>
                             </div>
-                            <div className="text-right min-w-[80px]">
-                              <div className="text-sm text-gray-500">Growth</div>
-                              <div className={`font-medium ${growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {growth > 0 ? '+' : ''}{growth.toFixed(1)}
+                            <div className="text-right w-24">
+                              <div className="text-xs text-gray-500 uppercase tracking-wider">Growth</div>
+                              <div className={`font-bold text-lg flex items-center justify-end gap-1 ${growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {growth > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                                <span>{growth > 0 ? '+' : ''}{growth.toFixed(1)}</span>
                               </div>
                             </div>
-                            <button 
-                              onClick={() => togglePanel(network.id)} 
-                              className="ml-4 p-2 hover:bg-gray-50 rounded-full"
+                            <MicroChart data={historicalData[network.id]} />
+                            <svg
+                              className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                              fill="none" viewBox="0 0 24 24" stroke="currentColor"
                             >
-                              <svg 
-                                className={`w-5 h-5 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`} 
-                                fill="none" 
-                                viewBox="0 0 24 24" 
-                                stroke="currentColor"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </button>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </button>
+
+                      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[2000px]' : 'max-h-0'}`}>
+                        <div className="border-t border-gray-200">
+                          <div className="px-4 pb-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                              {/* AI Integration */}
+                              <div>
+                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  AI Integration & Tech
+                                </h5>
+                                <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
+                                  {growthAnalysisData[network.id]?.aiIntegration.map((tip, i) => (
+                                    <li key={i}>
+                                      <span>{tip}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              {/* Growth Drivers */}
+                              <div>
+                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  Growth Drivers & Market
+                                </h5>
+                                <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
+                                  {growthAnalysisData[network.id]?.growthDrivers.map((tip, i) => (
+                                    <li key={i}>
+                                      <span>{tip}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              {/* Risk Assessment */}
+                              <div>
+                                <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  Risk Assessment
+                                </h5>
+                                <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
+                                  {growthAnalysisData[network.id]?.riskAssessment.map((tip, i) => (
+                                    <li key={i}>
+                                      <span>{tip}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+
+                            {/* Confidence Score */}
+                            <div className="mt-4 pt-4 border-t">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-500">Prediction Confidence</span>
+                                <span className="font-medium">{confidence.toFixed(0)}%</span>
+                              </div>
+                              <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${
+                                    confidence > 80 ? 'bg-green-500' : 
+                                    confidence > 60 ? 'bg-yellow-500' : 
+                                    'bg-red-500'
+                                  }`}
+                                  style={{ width: `${confidence}%` }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            {/* Add Betting Interface */}
+                            <BettingInterface network={network} prediction={network.prediction6m} />
                           </div>
                         </div>
                       </div>
-
-                      {/* Expandable Details */}
-                      {isExpanded && (
-                        <div className="px-4 pb-4 border-t">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                            {/* AI Integration */}
-                            <div>
-                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                AI Integration & Tech
-                              </h5>
-                              <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
-                                {growthAnalysisData[network.id]?.aiIntegration.map((tip, i) => (
-                                  <li key={i}>
-                                    <span>{tip}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            {/* Growth Drivers */}
-                            <div>
-                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                Growth Drivers & Market
-                              </h5>
-                              <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
-                                {growthAnalysisData[network.id]?.growthDrivers.map((tip, i) => (
-                                  <li key={i}>
-                                    <span>{tip}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            {/* Risk Assessment */}
-                            <div>
-                              <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                Risk Assessment
-                              </h5>
-                              <ul className="space-y-2 text-sm text-gray-600 pl-4 border-l border-gray-200">
-                                {growthAnalysisData[network.id]?.riskAssessment.map((tip, i) => (
-                                  <li key={i}>
-                                    <span>{tip}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-
-                          {/* Confidence Score */}
-                          <div className="mt-4 pt-4 border-t">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-500">Prediction Confidence</span>
-                              <span className="font-medium">{confidence.toFixed(0)}%</span>
-                            </div>
-                            <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full ${
-                                  confidence > 80 ? 'bg-green-500' : 
-                                  confidence > 60 ? 'bg-yellow-500' : 
-                                  'bg-red-500'
-                                }`}
-                                style={{ width: `${confidence}%` }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Add Betting Interface */}
-                          <BettingInterface network={network} prediction={network.prediction6m} />
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -3605,7 +3619,15 @@ const SIRDashboard = () => {
         {activeTab === 'alerts' && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 border">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Network Alerts & Notifications</h3>
+              <div className="flex items-start gap-5 mb-4">
+                <div className="bg-gradient-to-br from-red-500 to-yellow-500 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                  <AlertTriangle className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent">Network Alerts & Notifications</h3>
+                  <p className="text-gray-600 mt-1">Stay updated on significant network events.</p>
+                </div>
+              </div>
               
               {alerts.length > 0 ? (
                 <div className="space-y-4">
@@ -3650,8 +3672,16 @@ const SIRDashboard = () => {
           <div className="space-y-6">
             {/* Network Selector Header */}
             <div className="bg-white rounded-xl shadow-sm p-6 border">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Network Details</h2>
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-5">
+                  <div className="bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl p-3 flex-shrink-0 shadow-lg">
+                    <Info className="w-8 h-8 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-600 to-gray-800 bg-clip-text text-transparent">Network Details</h2>
+                    <p className="text-gray-600 mt-1">Explore in-depth metrics for each blockchain.</p>
+                  </div>
+                </div>
                 <div className="flex items-center gap-4">
                   <label className="text-sm font-medium text-gray-700">Select Network:</label>
                   <select
