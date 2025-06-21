@@ -1030,32 +1030,11 @@ const SIRDashboard = () => {
   };
 
   const formatCost = (cost) => {
-    if (cost === 0) return '0.00';
-    if (cost > 0 && cost < 0.01) return cost.toFixed(8);
+    if (cost === null || cost === undefined) return 'N/A';
+    if (typeof cost === 'string') {
+      return cost;
+    }
     return cost.toFixed(2);
-  };
-
-  const simulateNetwork = (network) => {
-    setIsSimulating(true);
-    setSimulationResults(null);
-    
-    // Simulate network performance over time
-    setTimeout(() => {
-      const results = {
-        network: network.name,
-        transactions: Math.floor(Math.random() * 1000000) + 100000,
-        successRate: 95 + Math.random() * 4,
-        avgLatency: 0.1 + Math.random() * 0.5,
-        costSavings: Math.floor(Math.random() * 80) + 10,
-        recommendations: [
-          "Consider implementing parallel processing for better throughput",
-          "Optimize gas usage for cost efficiency",
-          "Monitor network congestion during peak hours"
-        ]
-      };
-      setSimulationResults(results);
-      setIsSimulating(false);
-    }, 2000);
   };
 
   const runSimulation = async () => {
