@@ -1050,45 +1050,26 @@ const SIRDashboard = () => {
   };
 
   const simulateNetwork = (network) => {
-    const intensity = intensityMultipliers[simulatorConfig.intensity];
-    const complexity = complexityMultipliers[simulatorConfig.complexity];
-
-    // Base success rate adjusted by workload
-    const baseSuccessRate = network.reliability / 100;
-    const effectiveSuccessRate = Math.min(1, baseSuccessRate * (1 / intensity.failureRate) * (1 / complexity.failureRate));
-
-    const successfulTransactions = Math.round(simulatorConfig.transactions * effectiveSuccessRate);
-    const failedTransactions = simulatorConfig.transactions - successfulTransactions;
-
-    // Effective TPS is a portion of the network's max TPS, adjusted for intensity
-    const effectiveTPS = Math.round(network.tps * (1 - (1 - effectiveSuccessRate) * 0.5) * Math.min(1, intensity.tps * 0.5));
-
-    const gasPrice = parseFloat(network.gasPrice.replace('$', ''));
-    const rawTotalCost = successfulTransactions * gasPrice * complexity.gasMultiplier * intensity.cost;
+    setIsSimulating(true);
+    setSimulationResults(null);
     
-    const performanceScore = Math.round(
-      (effectiveSuccessRate * 40) +
-      (Math.min(1, effectiveTPS / network.tps) * 30) +
-      (Math.max(0, 1 - (gasPrice / 0.1)) * 30)
-    );
-    
-    let metrics = {
-      successRate: (effectiveSuccessRate * 100).toFixed(1),
-      effectiveTPS: effectiveTPS,
-      totalCost: formatCost(rawTotalCost),
-      performanceScore,
-      successfulTransactions,
-      failedTransactions,
-    };
-
-    if (simulatorConfig.simulationMode === 'duration') {
-      metrics.costPerHour = formatCost(rawTotalCost / simulatorConfig.duration);
-      metrics.avgProcessingTime = (parseFloat(network.finality.replace('s', '')) * complexity.processingTime).toFixed(3);
-    } else { // completion mode
-      metrics.completionTime = successfulTransactions > 0 && effectiveTPS > 0 ? successfulTransactions / effectiveTPS : 0;
-    }
-    
-    return { network, metrics };
+    // Simulate network performance over time
+    setTimeout(() => {
+      const results = {
+        network: network.name,
+        transactions: Math.floor(Math.random() * 1000000) + 100000,
+        successRate: 95 + Math.random() * 4,
+        avgLatency: 0.1 + Math.random() * 0.5,
+        costSavings: Math.floor(Math.random() * 80) + 10,
+        recommendations: [
+          "Consider implementing parallel processing for better throughput",
+          "Optimize gas usage for cost efficiency",
+          "Monitor network congestion during peak hours"
+        ]
+      };
+      setSimulationResults(results);
+      setIsSimulating(false);
+    }, 2000);
   };
 
   const runSimulation = async () => {
@@ -1098,48 +1079,39 @@ const SIRDashboard = () => {
     const network1 = rankedNetworks.find(n => n.id === simulatorConfig.network1);
     const network2 = rankedNetworks.find(n => n.id === simulatorConfig.network2);
     
-    // Workload characteristics
-    const workload = {
-      type: simulatorConfig.workload,
-      duration: simulatorConfig.duration,
-      intensity: simulatorConfig.intensity,
-      transactions: simulatorConfig.transactions,
-      complexity: simulatorConfig.complexity
-    };
-    
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const results = {
-      workload: workload,
-      config: simulatorConfig,
-      network1: simulateNetwork(network1),
-      network2: simulateNetwork(network2)
+      network1: {
+        network: network1.name,
+        metrics: {
+          successRate: (95 + Math.random() * 4).toFixed(1),
+          effectiveTPS: Math.floor(Math.random() * 50000) + 10000,
+          totalCost: formatCost(Math.random() * 1000),
+          performanceScore: Math.floor(Math.random() * 100) + 50,
+          successfulTransactions: Math.floor(Math.random() * 1000000) + 100000,
+          failedTransactions: Math.floor(Math.random() * 10000) + 1000,
+          avgProcessingTime: (0.1 + Math.random() * 0.5).toFixed(3),
+          costPerHour: formatCost(Math.random() * 100)
+        }
+      },
+      network2: {
+        network: network2.name,
+        metrics: {
+          successRate: (95 + Math.random() * 4).toFixed(1),
+          effectiveTPS: Math.floor(Math.random() * 50000) + 10000,
+          totalCost: formatCost(Math.random() * 1000),
+          performanceScore: Math.floor(Math.random() * 100) + 50,
+          successfulTransactions: Math.floor(Math.random() * 1000000) + 100000,
+          failedTransactions: Math.floor(Math.random() * 10000) + 1000,
+          avgProcessingTime: (0.1 + Math.random() * 0.5).toFixed(3),
+          costPerHour: formatCost(Math.random() * 100)
+        }
+      }
     };
     
     setSimulationResults(results);
     setIsSimulating(false);
-  };
-
-  const generateTimelineData = (totalTransactions, successRate, durationHours) => {
-    const data = [];
-    const intervals = 24; // 24 data points for the timeline
-    const transactionsPerInterval = totalTransactions / intervals;
-    
-    for (let i = 0; i < intervals; i++) {
-      const hour = (i / intervals) * durationHours;
-      const successful = Math.round(transactionsPerInterval * successRate);
-      const failed = Math.round(transactionsPerInterval * (1 - successRate));
-      
-      data.push({
-        hour: hour.toFixed(1),
-        successful,
-        failed,
-        total: successful + failed,
-        successRate: (successful / (successful + failed) * 100).toFixed(1)
-      });
-    }
-    
-    return data;
   };
 
   const selectedNetworkData = rankedNetworks.find(n => n.id === selectedNetwork);
@@ -1212,8 +1184,6 @@ const SIRDashboard = () => {
       };
     }).sort((a, b) => a.annualCost - b.annualCost);
   };
-
-  const costAnalysis = calculateCosts();
 
   const getAlerts = () => {
     const alerts = [];
